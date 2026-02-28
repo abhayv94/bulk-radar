@@ -59,7 +59,7 @@
           <option value="MF">Mutual Fund</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="addHolding()">Add to Portfolio</button>
+      <button id="addBtn" class="btn btn-primary" onclick="addHolding()">Add to Portfolio</button>
     </div>
     <table id="portfolioTable">
       <thead>
@@ -84,6 +84,7 @@
   </div>
   <script>
     let portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
+        let editingId = null;
 
     // Set today's date
     document.getElementById('buyDate').value = new Date().toISOString().split('T')[0];
@@ -101,12 +102,19 @@
         return;
       }
 
+      if (editingId) {
+      // Update existing holding
+      const index = portfolio.findIndex(h => h.id === editingId);
+      if (index !== -1) {
+        portfolio[index] = { ...portfolio[index], symbol, name, buyPrice, buyDate, quantity, type };
+      }
+      editingId = null;
+      document.getElementById('addBtn').textContent = 'Add to Portfolio';
+      document.getElementById('addBtn').style.background = '#2563eb';
+    } else {
+      // Add new holding
       portfolio.push({ symbol, name, buyPrice, buyDate, quantity, type, id: Date.now() });
-      localStorage.setItem('portfolio', JSON.stringify(portfolio));
-      document.getElementById('symbol').value = '';
-      document.getElementById('name').value = '';
-      document.getElementById('buyPrice').value = '';
-      document.getElementById('quantity').value = '';
+    }
       renderPortfolio();
     }
 
@@ -116,6 +124,24 @@
         localStorage.setItem('portfolio', JSON.stringify(portfolio));
         renderPortfolio();
       }
+    }
+
+        function editHolding(id) {
+      const holding = portfolio.find(h => h.id === id);
+      if (!holding) return;
+      
+      // Fill form with holding data
+      document.getElementById('symbol').value = holding.symbol;
+      document.getElementById('name').value = holding.name;
+      document.getElementById('buyPrice').value = holding.buyPrice;
+      document.getElementById('buyDate').value = holding.buyDate;
+      document.getElementById('quantity').value = holding.quantity;
+      document.getElementById('type').value = holding.type;
+      
+      // Set editing mode
+      editingId = id;
+      document.getElementById('addBtn').textContent = 'Update Portfolio';
+      document.getElementById('addBtn').style.background = '#f59e0b';
     }
 
     async function getCurrentPrice(symbol) {
@@ -158,7 +184,7 @@
           <td class="${totalPL >= 0 ? 'profit' : 'loss'}">&#8377;${totalPL.toFixed(2)}</td>
           <td><span class="${signal.class}">${signal.label}</span></td>
           <td>${holding.buyDate}</td>
-          <td><button class="delete-btn" onclick="deleteHolding(${holding.id})">Delete</button></td>
+          <td><button <button class="edit-btn" onclick="editHolding(${holding.id})">Edit</button>class="delete-btn" onclick="deleteHolding(${holding.id})">Delete</button></td>
         `;
         tbody.appendChild(row);
       }
