@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Radar - NSE/BSE Bulk & Block Deals</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #1e40af, #7c3aed); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: white; }
+    header span { background: rgba(255,255,255,0.2); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
+    .controls select, .controls button { padding: 10px 16px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 0.9rem; cursor: pointer; }
+    .controls button.primary { background: #2563eb; border-color: #2563eb; color: white; font-weight: 600; }
+    .controls button.primary:hover { background: #1d4ed8; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; }
+    .stat-card .label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card .value { font-size: 1.5rem; font-weight: 700; }
+    .stat-card .value.buy { color: #22c55e; }
+    .stat-card .value.sell { color: #ef4444; }
+    .stat-card .value.neutral { color: #60a5fa; }
+    .signal-section { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid #334155; }
+    .signal-section h2 { font-size: 1rem; font-weight: 600; margin-bottom: 12px; color: #94a3b8; }
+    .signal-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .signal-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .signal-badge.BUY { background: #14532d; color: #22c55e; border: 1px solid #22c55e40; }
+    .signal-badge.SELL { background: #7f1d1d; color: #ef4444; border: 1px solid #ef444440; }
+    .signal-badge.BOOK_PROFIT { background: #78350f; color: #f59e0b; border: 1px solid #f59e0b40; }
+    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; }
+    th { background: #0f172a; padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 12px 16px; border-top: 1px solid #334155; font-size: 0.875rem; }
+    tr:hover td { background: #263548; }
+    .buy-tag { color: #22c55e; font-weight: 600; }
+    .sell-tag { color: #ef4444; font-weight: 600; }
+    .loading { text-align: center; padding: 48px; color: #64748b; }
+    .error { background: #7f1d1d; border: 1px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #fca5a5; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+    .tab { padding: 8px 16px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: #94a3b8; cursor: pointer; font-size: 0.875rem; }
+    .tab.active { background: #2563eb; border-color: #2563eb; color: white; }
+    .refresh-info { font-size: 0.75rem; color: #64748b; margin-left: auto; }
+    @media (max-width: 640px) { .controls { flex-direction: column; } table { font-size: 0.75rem; } td, th { padding: 8px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>&#128200; Bulk Radar</h1>
+    <span>NSE/BSE Live</span>
+  </header>
+  <div class="container">
+    <div class="controls">
+      <select id="exchange">
+        <option value="NSE">NSE</option>
+        <option value="BSE">BSE</option>
+      </select>
+      <select id="dealType">
+        <option value="bulk">Bulk Deals</option>
+        <option value="block">Block Deals</option>
+      </select>
+      <input type="date" id="dateInput" style="padding:10px 16px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:0.9rem;">
+      <button class="primary" onclick="fetchDeals()">&#128269; Refresh</button>
+      <span class="refresh-info" id="lastUpdate"></span>
+    </div>
+    <div id="errorBox" class="error" style="display:none"></div>
+    <div class="stats" id="statsRow">
+      <div class="stat-card"><div class="label">Total Deals</div><div class="value neutral" id="statTotal">-</div></div>
+      <div class="stat-card"><div class="label">Buy Side</div><div class="value buy" id="statBuy">-</div></div>
+      <div class="stat-card"><div class="label">Sell Side</div><div class="value sell" id="statSell">-</div></div>
+      <div class="stat-card"><div class="label">Total Value (Cr)</div><div class="value neutral" id="statValue">-</div></div>
+    </div>
+    <div class="signal-section">
+      <h2>&#9889; Profit Booking Signals</h2>
+      <div class="signal-list" id="signalList"><span style="color:#64748b;font-size:0.875rem;">Load data to see signals...</span></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('all', this)">All</button>
+      <button class="tab" onclick="setTab('BUY', this)">Buy</button>
+      <button class="tab" onclick="setTab('SELL', this)">Sell</button>
+    </div>
+    <div id="tableContainer"><div class="loading">Select exchange and click Refresh to load deals</div></div>
+  </div>
+  <script>
+    const API = 'https://bulk-radar.onrender.com';
+    let allDeals = [];
+    let currentTab = 'all';
+
+    // Set today's date
+    const today = new Date();
+    const fmt = d => d.toISOString().split('T')[0];
+    document.getElementById('dateInput').value = fmt(today);
+
+    function setTab(tab, el) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      renderTable(allDeals);
+    }
+
+    async function fetchDeals() {
+      const exchange = document.getElementById('exchange').value;
+      const dealType = document.getElementById('dealType').value;
+      const date = document.getElementById('dateInput').value;
+      document.getElementById('tableContainer').innerHTML = '<div class="loading">&#8987; Loading deals...</div>';
+      document.getElementById('errorBox').style.display = 'none';
+      document.getElementById('signalList').innerHTML = '<span style="color:#64748b;font-size:0.875rem;">Loading...</span>';
+      try {
+        const res = await fetch(`${API}/deals?exchange=${exchange}&type=${dealType}&date=${date}`);
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
+        allDeals = data.deals || [];
+        updateStats(allDeals, data);
+        renderSignals(data.signals || []);
+        renderTable(allDeals);
+        document.getElementById('lastUpdate').textContent = 'Updated: ' + new Date().toLocaleTimeString('en-IN');
+      } catch(e) {
+        document.getElementById('errorBox').style.display = 'block';
+        document.getElementById('errorBox').textContent = '&#9888; ' + e.message + '. Note: Market data may not be available on weekends/holidays.';
+        document.getElementById('tableContainer').innerHTML = '<div class="loading">No data available</div>';
+      }
+    }
+
+    function updateStats(deals, data) {
+      const buys = deals.filter(d => (d.deal_type||'').toUpperCase() === 'BUY');
+      const sells = deals.filter(d => (d.deal_type||'').toUpperCase() === 'SELL');
+      const totalVal = deals.reduce((s, d) => s + (parseFloat(d.value_cr) || 0), 0);
+      document.getElementById('statTotal').textContent = deals.length;
+      document.getElementById('statBuy').textContent = buys.length;
+      document.getElementById('statSell').textContent = sells.length;
+      document.getElementById('statValue').textContent = totalVal.toFixed(0);
+    }
+
+    function renderSignals(signals) {
+      const el = document.getElementById('signalList');
+      if (!signals.length) { el.innerHTML = '<span style="color:#64748b;font-size:0.875rem;">No strong signals today</span>'; return; }
+      el.innerHTML = signals.map(s => `<span class="signal-badge ${s.signal}" title="${s.reason}">${s.signal === 'BOOK_PROFIT' ? '&#128178;' : s.signal === 'BUY' ? '&#128200;' : '&#128201;'} ${s.symbol} &mdash; ${s.signal.replace('_',' ')}</span>`).join('');
+    }
+
+    function renderTable(deals) {
+      const filtered = currentTab === 'all' ? deals : deals.filter(d => (d.deal_type||'').toUpperCase() === currentTab);
+      if (!filtered.length) { document.getElementById('tableContainer').innerHTML = '<div class="loading">No deals found for selected filter</div>'; return; }
+      const rows = filtered.map(d => `<tr>
+        <td><strong>${d.symbol || '-'}</strong></td>
+        <td>${d.client || '-'}</td>
+        <td class="${(d.deal_type||'').toUpperCase()==='BUY'?'buy-tag':'sell-tag'}">${d.deal_type || '-'}</td>
+        <td>${d.quantity ? Number(d.quantity).toLocaleString('en-IN') : '-'}</td>
+        <td>&#8377;${d.price || '-'}</td>
+        <td>${d.value_cr ? '&#8377;' + d.value_cr + ' Cr' : '-'}</td>
+        <td>${d.date || '-'}</td>
+      </tr>`).join('');
+      document.getElementById('tableContainer').innerHTML = `<table>
+        <thead><tr><th>Symbol</th><th>Client/Entity</th><th>Buy/Sell</th><th>Quantity</th><th>Price</th><th>Value</th><th>Date</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+  </script>
+</body>
+</html>
