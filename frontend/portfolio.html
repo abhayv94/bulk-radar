@@ -184,7 +184,7 @@
           <td class="${totalPL >= 0 ? 'profit' : 'loss'}">&#8377;${totalPL.toFixed(2)}</td>
           <td><span class="${signal.class}">${signal.label}</span></td>
           <td>${holding.buyDate}</td>
-          <td><button <button class="edit-btn" onclick="editHolding(${holding.id})">Edit</button>class="delete-btn" onclick="deleteHolding(${holding.id})">Delete</button></td>
+          <td><button class="edit-btn" onclick="editHolding(${holding.id})">Edit</button><button class="delete-btn" onclick="deleteHolding(${holding.id})">Delete</button></td>
         `;
         tbody.appendChild(row);
       }
