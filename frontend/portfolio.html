@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Portfolio - Bulk Radar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #1e40af, #7c3aed); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: white; }
+    .nav { display: flex; gap: 12px; }
+    .nav a { padding: 8px 16px; border-radius: 8px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; font-size: 0.875rem; }
+    .nav a:hover { background: rgba(255,255,255,0.3); }
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
+    .controls { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .controls h2 { font-size: 1.25rem; margin-bottom: 16px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .form-grid input, .form-grid select { padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 0.9rem; }
+    .btn { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #64748b; color: white; }
+    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; margin-top: 24px; }
+    th { background: #0f172a; padding: 12px 16px; text-align: left; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; }
+    td { padding: 12px 16px; border-top: 1px solid #334155; font-size: 0.875rem; }
+    tr:hover td { background: #263548; }
+    .profit { color: #22c55e; font-weight: 600; }
+    .loss { color: #ef4444; font-weight: 600; }
+    .signal-hold { background: #fbbf24; color: #78350f; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .signal-exit { background: #ef4444; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .signal-book { background: #f59e0b; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .signal-buy { background: #22c55e; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .delete-btn { background: #dc2626; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; border: none; cursor: pointer; }
+    .delete-btn:hover { background: #b91c1c; }
+    .empty { text-align: center; padding: 48px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>&#128200; My Portfolio</h1>
+    <div class="nav">
+      <a href="index.html">&#8592; Back to Bulk Deals</a>
+    </div>
+  </header>
+  <div class="container">
+    <div class="controls">
+      <h2>&#10133; Add Stock/Mutual Fund</h2>
+      <div class="form-grid">
+        <input type="text" id="symbol" placeholder="Symbol (e.g. RELIANCE)" />
+        <input type="text" id="name" placeholder="Name" />
+        <input type="number" id="buyPrice" placeholder="Buy Price (&#8377;)" step="0.01" />
+        <input type="date" id="buyDate" />
+        <input type="number" id="quantity" placeholder="Quantity" />
+        <select id="type">
+          <option value="Stock">Stock</option>
+          <option value="MF">Mutual Fund</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="addHolding()">Add to Portfolio</button>
+    </div>
+    <table id="portfolioTable">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Qty</th>
+          <th>Buy Price</th>
+          <th>Current Price</th>
+          <th>Change %</th>
+          <th>Profit/Loss</th>
+          <th>Signal</th>
+          <th>Buy Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="portfolioBody">
+        <tr><td colspan="11" class="empty">No holdings yet. Add your first stock or mutual fund above.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    let portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
+
+    // Set today's date
+    document.getElementById('buyDate').value = new Date().toISOString().split('T')[0];
+
+    function addHolding() {
+      const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+      const name = document.getElementById('name').value.trim();
+      const buyPrice = parseFloat(document.getElementById('buyPrice').value);
+      const buyDate = document.getElementById('buyDate').value;
+      const quantity = parseFloat(document.getElementById('quantity').value);
+      const type = document.getElementById('type').value;
+
+      if (!symbol || !name || !buyPrice || !buyDate || !quantity) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      portfolio.push({ symbol, name, buyPrice, buyDate, quantity, type, id: Date.now() });
+      localStorage.setItem('portfolio', JSON.stringify(portfolio));
+      document.getElementById('symbol').value = '';
+      document.getElementById('name').value = '';
+      document.getElementById('buyPrice').value = '';
+      document.getElementById('quantity').value = '';
+      renderPortfolio();
+    }
+
+    function deleteHolding(id) {
+      if (confirm('Delete this holding?')) {
+        portfolio = portfolio.filter(h => h.id !== id);
+        localStorage.setItem('portfolio', JSON.stringify(portfolio));
+        renderPortfolio();
+      }
+    }
+
+    async function getCurrentPrice(symbol) {
+      // Simulate price fetch - replace with real API later
+      return Math.random() * 100 + 50;
+    }
+
+    function getSignal(changePercent) {
+      if (changePercent > 20) return { label: '&#128995; BOOK PROFIT', class: 'signal-book' };
+      if (changePercent > 10) return { label: '&#9989; GOOD - HOLD', class: 'signal-hold' };
+      if (changePercent < -10) return { label: '&#10060; EXIT NOW', class: 'signal-exit' };
+      if (changePercent < 0) return { label: '&#128308; ACCUMULATE', class: 'signal-buy' };
+      return { label: '&#128994; HOLD', class: 'signal-hold' };
+    }
+
+    async function renderPortfolio() {
+      const tbody = document.getElementById('portfolioBody');
+      if (!portfolio.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="empty">No holdings yet. Add your first stock or mutual fund above.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      for (const holding of portfolio) {
+        const currentPrice = await getCurrentPrice(holding.symbol);
+        const change = currentPrice - holding.buyPrice;
+        const changePercent = (change / holding.buyPrice) * 100;
+        const totalPL = change * holding.quantity;
+        const signal = getSignal(changePercent);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${holding.symbol}</strong></td>
+          <td>${holding.name}</td>
+          <td>${holding.type}</td>
+          <td>${holding.quantity}</td>
+          <td>&#8377;${holding.buyPrice.toFixed(2)}</td>
+          <td>&#8377;${currentPrice.toFixed(2)}</td>
+          <td class="${changePercent >= 0 ? 'profit' : 'loss'}">${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</td>
+          <td class="${totalPL >= 0 ? 'profit' : 'loss'}">&#8377;${totalPL.toFixed(2)}</td>
+          <td><span class="${signal.class}">${signal.label}</span></td>
+          <td>${holding.buyDate}</td>
+          <td><button class="delete-btn" onclick="deleteHolding(${holding.id})">Delete</button></td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+
+    renderPortfolio();
+  </script>
+</body>
+</html>
