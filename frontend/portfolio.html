@@ -143,8 +143,13 @@
     }
 
     async function getCurrentPrice(symbol) {
-      // Simulate price fetch - replace with real API later
-      return Math.random() * 100 + 50;
+    }    try {
+        const response = await fetch(`https://groww.in/v1/api/stocks_data/v1/accord_points/exchange/NSE/segment/CASH/${symbol}`);
+        const data = await response.json();
+        return data.ltp || 0;
+    } catch (error) {
+        console.error('Error fetching price for', symbol, error);
+        return 0;
     }
 
     function getSignal(changePercent) {
