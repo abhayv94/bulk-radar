@@ -144,7 +144,7 @@
 
     async function getCurrentPrice(symbol) {
     }    try {
-        const response = await fetch(`https://groww.in/v1/api/stocks_data/v1/accord_points/exchange/NSE/segment/CASH/${symbol}`);
+        const response = await fetch(/api/price/${symbol}
         const data = await response.json();
         return data.ltp || 0;
     } catch (error) {
