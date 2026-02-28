@@ -45,6 +45,26 @@
   </style>
 </head>
 <body>
+    <!-- Password Protection -->
+  <div id="passwordGate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f172a;z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="background:#1e293b;padding:40px;border-radius:16px;text-align:center;max-width:400px;">
+      <h2 style="color:#e2e8f0;margin-bottom:20px;">🔒 Private Access</h2>
+      <input type="password" id="passInput" placeholder="Enter password" style="width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:1rem;margin-bottom:16px;" onkeyup="if(event.key==='Enter')checkPass()">
+      <button onclick="checkPass()" style="width:100%;padding:12px;background:#2563eb;border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;font-size:1rem;">Unlock</button>
+      <div id="errMsg" style="color:#ef4444;margin-top:12px;display:none;">Incorrect password</div>
+    </div>
+  </div>
+  <script>
+    function checkPass() {
+      const pass = document.getElementById('passInput').value;
+      if (pass === 'BulkRadar2026') {
+        document.getElementById('passwordGate').style.display = 'none';
+      } else {
+        document.getElementById('errMsg').style.display = 'block';
+        setTimeout(() => document.getElementById('errMsg').style.display = 'none', 2000);
+      }
+    }
+  </script>
   <header>
     <h1>&#128200; Bulk Radar</h1>
     <span>NSE/BSE Live</span>
