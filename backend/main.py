@@ -201,3 +201,14 @@ async def get_summary():
         "total_sell_value_cr": round(tsv, 2),
         "market_mood": mood,
     }
+
+
+@app.get("/price/{symbol}")
+async def get_stock_price(symbol: str):
+    try:
+        url = f"https://groww.in/v1/api/stocks_data/v1/accord_points/exchange/NSE/segment/CASH/{symbol}"
+        response = httpx.get(url, timeout=10)
+        data = response.json()
+        return {"ltp": data.get("ltp", 0), "symbol": symbol}
+    except Exception as e:
+        return {"ltp": 0, "symbol": symbol, "error": str(e)}
